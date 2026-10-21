@@ -1,0 +1,6 @@
+{
+  "name": "CHAMONVIN LIMITED",
+  "description": "International sports management and travel consulting website specializing in football player representation, travel, tours, flight reservations, and visa consultation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

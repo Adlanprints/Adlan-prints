@@ -1,0 +1,334 @@
+{
+  "settings": {
+    "companyName": "CHAMONVIN LIMITED",
+    "logoUrl": "https://i.ibb.co/Kp7HY9pp/Whats-App-Image-2026-10-17-at-15-09-07.jpg",
+    "logoType": "url",
+    "heroSlider": {
+      "slides": [
+        {
+          "id": "slide-1",
+          "image": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=2000&q=85",
+          "alt": "Professional football pitch viewed from the stands",
+          "title": "Professional Football Representation",
+          "subtitle": "Dedicated global player management, scouting pathways, and high-level career development."
+        },
+        {
+          "id": "slide-2",
+          "image": "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=2000&q=85",
+          "alt": "Beautifully maintained football field with goalposts",
+          "title": "Strategic Career Planning & Club Connections",
+          "subtitle": "Navigating domestic and international transfers with transparency, integrity, and diligence."
+        },
+        {
+          "id": "slide-3",
+          "image": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=2000&q=85",
+          "alt": "High-quality football stadium featuring match atmosphere",
+          "title": "International Travel & Visa Advisory",
+          "subtitle": "Comprehensive travel planning, flight bookings, and legitimate visa consultation for talents and families."
+        }
+      ],
+      "interval": 15,
+      "transitionStyle": "fade"
+    },
+    "heroTagline": "Your vision and Goal is our Priority",
+    "heroButtons": [
+      {
+        "label": "Explore Our Sports Management",
+        "path": "/sports-management",
+        "style": "primary"
+      },
+      {
+        "label": "Explore Travel & Visa Services",
+        "path": "/travel-tours",
+        "style": "dark"
+      },
+      {
+        "label": "Become a Represented Player",
+        "path": "/player-representation",
+        "style": "primary"
+      },
+      {
+        "label": "Book a Consultation",
+        "path": "/contact#consultation",
+        "style": "secondary"
+      }
+    ],
+    "contact": {
+      "email": "info@chamonvin.com",
+      "phone": "+44 20 7946 0912",
+      "whatsapp": "+44 7700 900823",
+      "officeAddress": "London, United Kingdom & Global Representation Hubs",
+      "businessHours": "Monday – Friday: 9:00 AM – 6:00 PM GMT | Saturday: By Appointment",
+      "socialLinks": {
+        "twitter": "https://x.com/chamonvin",
+        "instagram": "https://instagram.com/chamonvin",
+        "linkedin": "https://linkedin.com/company/chamonvin",
+        "facebook": ""
+      }
+    },
+    "about": {
+      "overview": "At Chamonvin Limited, our clients' priorities come first, every time.\n\nChamonvin Limited is an international/global sports management firm specializing in soccer, football, and player representation, with extended services in travel and visa consultation.\n\nWe represent amateur players, semi-professional players, professional players, managers, and teams. We continuously provide dedicated, high-quality service to our clients, whether on or off the pitch.\n\nWe understand what it takes to pursue success at the highest level. We help our clients navigate their careers, identify suitable opportunities, and make informed decisions at every stage of their journey.\n\nOur number-one priority is our clients and their success. Chamonvin Limited is committed to helping clients access suitable opportunities through professional support, communication, and personalized service.",
+      "mission": "To discover, develop, and represent sports talent globally while providing comprehensive travel, visa, and logistics solutions anchored in transparency, trust, and client success.",
+      "vision": "To be recognized globally as a premier, ethical sports management and travel consultancy that empowers athletes and travelers to fulfill their highest potential without borders.",
+      "philosophy": "Our clients' vision and goals stand at the center of everything we do. We offer honest evaluations, long-term career foresight, and meticulous logistical execution.",
+      "sportsApproach": "We take a holistic approach to player development: from technical profiling and tactical awareness to contract negotiation coordination, international network introductions, and life beyond the pitch.",
+      "travelApproach": "We provide seamless, lawful, and personalized guidance for international trips, tours, flights, and visa consultations tailored to athletes, business professionals, students, and families.",
+      "commitment": "Absolute client confidentiality, full transparency in communication, and uncompromising adherence to relevant regulatory and legal frameworks."
+    },
+    "supabase": {
+      "url": "https://emkicfpchyebihczvqxp.supabase.co",
+      "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVta2ljZnBjaHllYmloY3p2cXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MTUzNjMsImV4cCI6MjEwNzk5MTM2M30.iVvnS9Ksq-l-YJ9OCPRCSPQzs8zJhkH1TqRFATk0Fh0",
+      "serviceKey": "",
+      "databaseUrl": "",
+      "enabled": true
+    }
+  },
+  "players": [
+    {
+      "id": "player-1",
+      "fullName": "Kwame Mensah",
+      "position": "Center Forward / Striker",
+      "nationality": "Ghana",
+      "dateOfBirth": "2004-06-15",
+      "age": 21,
+      "preferredFoot": "Right",
+      "currentClub": "Accra Lions Elite Academy",
+      "playingLevel": "Semi-Professional",
+      "photoUrl": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80",
+      "videoUrl": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "shortBio": "Explosive center forward with blistering acceleration, instinctive movement off the ball, and clinical finishing efficiency inside the 18-yard box.",
+      "careerAchievements": [
+        "Top Goalscorer - National Youth Cup 2025 (18 goals)",
+        "Golden Boot Winner - West Africa Showcase",
+        "Scouted for European Spring Trials"
+      ],
+      "internalScoutingNotes": "Strong physical presence, presses relentlessly from the front, high coachability rating.",
+      "isFeatured": true,
+      "isPublished": true,
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "updatedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "player-2",
+      "fullName": "Mateo Silva Santos",
+      "position": "Central Attacking Midfielder",
+      "nationality": "Brazil",
+      "dateOfBirth": "2003-11-20",
+      "age": 22,
+      "preferredFoot": "Both",
+      "currentClub": "Santos Regional Development Squad",
+      "playingLevel": "Professional",
+      "photoUrl": "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=800&q=80",
+      "videoUrl": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "shortBio": "Visionary playmaker gifted with exceptional close control, vision under high pressure, and pinpoint set-piece delivery.",
+      "careerAchievements": [
+        "Paulista U-20 Championship Silver Medalist",
+        "Most Key Passes & Assists in regional league (14 assists in 2025)",
+        "Selected for International Scouting Combine"
+      ],
+      "internalScoutingNotes": "Elite vision, high football IQ, excels in transition play and final-third incision.",
+      "isFeatured": true,
+      "isPublished": true,
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "updatedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "player-3",
+      "fullName": "Emmanuel Chukwueze Okafor",
+      "position": "Central Defender / Sweeper",
+      "nationality": "Nigeria",
+      "dateOfBirth": "2005-02-10",
+      "age": 20,
+      "preferredFoot": "Left",
+      "currentClub": "Lagos Golden Stars FC",
+      "playingLevel": "Semi-Professional",
+      "photoUrl": "https://images.unsplash.com/photo-1543351611-58f69d7c1781?auto=format&fit=crop&w=800&q=80",
+      "videoUrl": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "shortBio": "Commanding modern center back featuring formidable aerial dominance, proactive defensive anticipation, and clean line-breaking progressive passes.",
+      "careerAchievements": [
+        "National Under-20 Invitational Defensive MVP",
+        "Recorded 87% aerial duel success rate across 2024/2025 season",
+        "Team Captain and backline organizer"
+      ],
+      "internalScoutingNotes": "Rare natural left-footed ball-playing center back with commanding vocal presence and tactical maturity.",
+      "isFeatured": true,
+      "isPublished": true,
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "updatedAt": "2026-10-20T10:00:00.000Z"
+    }
+  ],
+  "travelPackages": [
+    {
+      "id": "travel-1",
+      "title": "European Elite Football Showcase & Club Trials 2026",
+      "destination": "United Kingdom & Spain (London, Manchester, Madrid)",
+      "coverImageUrl": "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1200&q=80",
+      "description": "An exclusive 14-day intensive showcase tour placing aspiring players in front of UEFA-licensed scouts, club sporting directors, and certified FIFA intermediaries across premier English and Spanish training complexes.",
+      "duration": "14 Days / 13 Nights",
+      "inclusions": [
+        "Full hotel accommodation in 4-star athletic partner facilities",
+        "3 scheduled competitive showcase matches against certified academy opponents",
+        "Official scouting dossier and video highlight reel delivered to attending scouts",
+        "Nutritional meal program and licensed physiotherapy access",
+        "Ground transportation via private team coach and airport transfers"
+      ],
+      "exclusions": [
+        "International flight tickets (can be arranged separately via our flight ticketing desk)",
+        "Personal incidental expenses",
+        "Standard travel insurance"
+      ],
+      "price": "3,450",
+      "currency": "GBP",
+      "datesOrAvailability": "Spring Edition: May 2026 | Autumn Edition: October 2026",
+      "terms": "Full compliance with sports visa regulations required. Registration fee is non-refundable upon official trial confirmation.",
+      "isPublished": true,
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "updatedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "travel-2",
+      "title": "Dubai High-Performance Training Camp & Winter Showcase",
+      "destination": "Dubai, United Arab Emirates",
+      "coverImageUrl": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80",
+      "description": "10-day world-class training immersion at state-of-the-art climate-controlled facilities in Dubai, combining elite fitness benchmarking with competitive exhibition fixtures against Gulf-region teams.",
+      "duration": "10 Days / 9 Nights",
+      "inclusions": [
+        "Luxury athlete resort lodging with private training pitch access",
+        "Sports science profiling: GPS telemetry, VO2 max testing & muscular readiness analysis",
+        "2 exhibition fixtures against UAE Pro League academy squads",
+        "Full board catering curated by accredited sports nutritionists",
+        "Chaperoned desert cultural excursion and relaxation tour"
+      ],
+      "exclusions": [
+        "Personal leisure spending",
+        "Visa processing fees where applicable"
+      ],
+      "price": "2,850",
+      "currency": "USD",
+      "datesOrAvailability": "Year-round availability; peak bookings November through March",
+      "terms": "Open to amateur, semi-professional, and academy-affiliated athletes aged 16+.",
+      "isPublished": true,
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "updatedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "travel-3",
+      "title": "Central European Scouting & Academy Tour",
+      "destination": "Germany & France (Munich, Frankfurt, Strasbourg)",
+      "coverImageUrl": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80",
+      "description": "Comprehensive 12-day scouting itinerary across the footballing heartlands of Germany and France. Players experience high-level tactical sessions and direct assessments by continental scouts.",
+      "duration": "12 Days / 11 Nights",
+      "inclusions": [
+        "Centrally located 4-star accommodation with daily breakfast & dinner",
+        "Training sessions led by UEFA Pro licensed guest clinicians",
+        "Matches against premier regional club feeder academies",
+        "All inter-city rail and private bus logistics",
+        "Full scouting report and analytics breakdown"
+      ],
+      "exclusions": [
+        "Long-haul international airfare",
+        "Visa consular fees"
+      ],
+      "price": "2,990",
+      "currency": "EUR",
+      "datesOrAvailability": "Summer Series: July – August 2026",
+      "terms": "Proof of active medical clearance required prior to departure.",
+      "isPublished": true,
+      "createdAt": "2026-10-20T10:00:00.000Z",
+      "updatedAt": "2026-10-20T10:00:00.000Z"
+    }
+  ],
+  "news": [
+    {
+      "id": "news-1",
+      "title": "CHAMONVIN Expands Global Player Scouting Network for 2026/27 Season",
+      "category": "Sports Management",
+      "summary": "CHAMONVIN LIMITED announces the appointment of senior regional talent coordinators across West Africa, South America, and Central Europe.",
+      "content": "CHAMONVIN LIMITED is pleased to announce a significant strategic expansion of our international football scouting operations. With our client-first philosophy at the forefront, our newly established scouting desks in Accra, São Paulo, and Munich will provide transparent, direct pathways for exceptional young footballers aiming for international careers.\n\nOur firm provides continuous, end-to-end representation—handling technical player development, contract negotiation coordination, and comprehensive legal and immigration logistics.\n\nApplications for the 2026 international talent review are now open through our official Player Representation portal.",
+      "coverImageUrl": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80",
+      "author": "Chamonvin Editorial Desk",
+      "isPublished": true,
+      "publishedAt": "2026-10-18T09:00:00.000Z",
+      "createdAt": "2026-10-18T09:00:00.000Z",
+      "updatedAt": "2026-10-18T09:00:00.000Z"
+    },
+    {
+      "id": "news-2",
+      "title": "Navigating International Sports Visas: A Guide for Talents & Families",
+      "category": "Visa & Immigration",
+      "summary": "Our immigration advisory division releases key insights into UK and Schengen athletic visitor and trialist visa regulations.",
+      "content": "Securing legitimate, compliant travel authorization is often the most critical hurdle facing athletes invited for international trials. At CHAMONVIN LIMITED, our visa consultation desk works hand-in-hand with licensed immigration partners to ensure seamless, fully documented visa applications.\n\nWhether preparing standard visitor visas for European showcase matches, short-term training visas, or long-term family relocation packages, our team coordinates every requirement with absolute transparency and confidentiality.",
+      "coverImageUrl": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80",
+      "author": "Chamonvin Immigration Desk",
+      "isPublished": true,
+      "publishedAt": "2026-10-15T11:30:00.000Z",
+      "createdAt": "2026-10-15T11:30:00.000Z",
+      "updatedAt": "2026-10-15T11:30:00.000Z"
+    },
+    {
+      "id": "news-3",
+      "title": "Registration Now Open: 2026 European Elite Football Showcase Tour",
+      "category": "Travel & Tours",
+      "summary": "Limited spaces are available for our flagship 14-day European trial and scouting expedition across the UK and Spain.",
+      "content": "CHAMONVIN LIMITED is proud to unveil our flagship European Elite Football Showcase Tour 2026. Designed exclusively for represented and scouted talents aged 16 to 23, the 14-day program will feature competitive matches against top European academies, daily coaching with UEFA Pro staff, and direct exposure to club sporting directors.\n\nInterested players, families, and academy managers are invited to contact our travel consultation team or submit an inquiry through our website.",
+      "coverImageUrl": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80",
+      "author": "Chamonvin Travel Desk",
+      "isPublished": true,
+      "publishedAt": "2026-10-10T14:00:00.000Z",
+      "createdAt": "2026-10-10T14:00:00.000Z",
+      "updatedAt": "2026-10-10T14:00:00.000Z"
+    }
+  ],
+  "inquiries": [
+    {
+      "id": "inq-1792417474072-499",
+      "referenceNo": "CHM-REP-2026-7202",
+      "category": "player-representation",
+      "clientName": "Tariq Al-Mansoor",
+      "email": "tariq@example.com",
+      "phone": "+447700900111",
+      "details": {
+        "position": "Attacking Midfield",
+        "playingLevel": "Semi-Professional"
+      },
+      "status": "New",
+      "internalNotes": [],
+      "createdAt": "2026-10-19T13:44:34.072Z",
+      "updatedAt": "2026-10-19T13:44:34.072Z"
+    }
+  ],
+  "admins": [
+    {
+      "id": "admin-1",
+      "email": "admin@chamonvin.com",
+      "name": "Chamonvin Administrator",
+      "passwordHash": "$2b$10$WI3WIHyB.UUbHLtMteNsAOhuLDj7xDRZ/4Xz5bycmaPYMjaJTrr3q",
+      "role": "Super Admin",
+      "createdAt": "2026-10-19T13:44:25.549Z",
+      "lastLoginAt": "2026-10-19T13:44:43.219Z"
+    }
+  ],
+  "activityLogs": [
+    {
+      "id": "log-1792417483219-173",
+      "action": "Admin Login",
+      "adminEmail": "admin@chamonvin.com",
+      "details": "Successful sign in from IP 127.0.0.1",
+      "timestamp": "2026-10-19T13:44:43.219Z"
+    },
+    {
+      "id": "log-1792417477942-795",
+      "action": "Admin Login",
+      "adminEmail": "admin@chamonvin.com",
+      "details": "Successful sign in from IP 127.0.0.1",
+      "timestamp": "2026-10-19T13:44:37.942Z"
+    },
+    {
+      "id": "log-1",
+      "action": "System Initialized",
+      "adminEmail": "system@chamonvin.com",
+      "details": "CHAMONVIN LIMITED platform initialized with default settings and secure super administrator.",
+      "timestamp": "2026-10-19T13:44:25.549Z"
+    }
+  ]
+}
