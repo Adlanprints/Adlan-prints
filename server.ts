@@ -10,13 +10,25 @@ import {
   testSupabaseConnection,
   syncLocalDataToSupabase,
   getPublishedPlayersFromSupabase,
+  getAllPlayersFromSupabase,
   getPlayerByIdFromSupabase,
+  upsertPlayerInSupabase,
+  deletePlayerFromSupabase,
   getPublishedTravelPackagesFromSupabase,
+  getAllTravelPackagesFromSupabase,
   getTravelPackageByIdFromSupabase,
+  upsertTravelPackageInSupabase,
+  deleteTravelPackageFromSupabase,
   getPublishedNewsFromSupabase,
+  getAllNewsFromSupabase,
   getNewsByIdFromSupabase,
+  upsertNewsInSupabase,
+  deleteNewsFromSupabase,
   getSettingsFromSupabase,
-  insertInquiryToSupabase
+  upsertSettingsInSupabase,
+  insertInquiryToSupabase,
+  updateInquiryInSupabase,
+  deleteInquiryFromSupabase
 } from './server/supabase.js';
 
 dotenv.config();
@@ -377,10 +389,11 @@ app.get('/api/admin/settings', requireAdmin, (_req: AuthenticatedRequest, res: R
   res.json(dbManager.getSettings());
 });
 
-app.put('/api/admin/settings', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.put('/api/admin/settings', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const updated = dbManager.updateSettings(req.body);
     dbManager.logActivity('Settings Updated', req.admin?.email || 'admin', 'Website appearance and configuration updated.');
+    upsertSettingsInSupabase(updated).catch(e => console.warn('Supabase settings auto-sync warning:', e));
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to save settings.' });
@@ -436,105 +449,146 @@ app.post('/api/admin/supabase/sync', requireAdmin, async (req: AuthenticatedRequ
   }
 });
 
-// Admin players management
-app.get('/api/admin/players', requireAdmin, (_req: AuthenticatedRequest, res: Response) => {
+// Admin players management (Synchronized with Supabase)
+app.get('/api/admin/players', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const supabasePlayers = await getAllPlayersFromSupabase();
+    if (supabasePlayers !== null && supabasePlayers.length > 0) {
+      res.json(supabasePlayers);
+      return;
+    }
+  } catch (err) {
+    console.warn('Supabase admin players fetch error, fallback to local:', err);
+  }
   res.json(dbManager.getPlayers(false));
 });
 
-app.post('/api/admin/players', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.post('/api/admin/players', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const player = dbManager.savePlayer(req.body);
     dbManager.logActivity('Player Added', req.admin?.email || 'admin', `Added player profile: ${player.fullName}`);
+    // Auto-sync write to Supabase immediately
+    upsertPlayerInSupabase(player).catch(e => console.warn('Supabase player auto-sync warning:', e));
     res.status(201).json(player);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to create player.' });
   }
 });
 
-app.put('/api/admin/players/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.put('/api/admin/players/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const player = dbManager.savePlayer({ ...req.body, id: req.params.id });
     dbManager.logActivity('Player Updated', req.admin?.email || 'admin', `Updated player profile: ${player.fullName}`);
+    // Auto-sync update to Supabase immediately
+    upsertPlayerInSupabase(player).catch(e => console.warn('Supabase player auto-sync warning:', e));
     res.json(player);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update player.' });
   }
 });
 
-app.delete('/api/admin/players/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.delete('/api/admin/players/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const player = dbManager.getPlayerById(req.params.id);
   const success = dbManager.deletePlayer(req.params.id);
   if (success) {
     dbManager.logActivity('Player Deleted', req.admin?.email || 'admin', `Deleted player with ID: ${req.params.id}`);
+    deletePlayerFromSupabase(req.params.id, player?.fullName).catch(e => console.warn('Supabase player delete warning:', e));
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Player not found.' });
   }
 });
 
-// Admin Travel Packages
-app.get('/api/admin/travel-packages', requireAdmin, (_req: AuthenticatedRequest, res: Response) => {
+// Admin Travel Packages (Synchronized with Supabase)
+app.get('/api/admin/travel-packages', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const supabasePackages = await getAllTravelPackagesFromSupabase();
+    if (supabasePackages !== null && supabasePackages.length > 0) {
+      res.json(supabasePackages);
+      return;
+    }
+  } catch (err) {
+    console.warn('Supabase admin travel packages fetch error, fallback to local:', err);
+  }
   res.json(dbManager.getTravelPackages(false));
 });
 
-app.post('/api/admin/travel-packages', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.post('/api/admin/travel-packages', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const pkg = dbManager.saveTravelPackage(req.body);
     dbManager.logActivity('Travel Package Created', req.admin?.email || 'admin', `Created package: ${pkg.title}`);
+    upsertTravelPackageInSupabase(pkg).catch(e => console.warn('Supabase travel package sync warning:', e));
     res.status(201).json(pkg);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to create travel package.' });
   }
 });
 
-app.put('/api/admin/travel-packages/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.put('/api/admin/travel-packages/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const pkg = dbManager.saveTravelPackage({ ...req.body, id: req.params.id });
     dbManager.logActivity('Travel Package Updated', req.admin?.email || 'admin', `Updated package: ${pkg.title}`);
+    upsertTravelPackageInSupabase(pkg).catch(e => console.warn('Supabase travel package sync warning:', e));
     res.json(pkg);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update travel package.' });
   }
 });
 
-app.delete('/api/admin/travel-packages/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.delete('/api/admin/travel-packages/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const pkg = dbManager.getTravelPackageById(req.params.id);
   const success = dbManager.deleteTravelPackage(req.params.id);
   if (success) {
     dbManager.logActivity('Travel Package Deleted', req.admin?.email || 'admin', `Deleted travel package ID: ${req.params.id}`);
+    deleteTravelPackageFromSupabase(req.params.id, pkg?.title).catch(e => console.warn('Supabase travel package delete warning:', e));
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Travel package not found.' });
   }
 });
 
-// Admin News
-app.get('/api/admin/news', requireAdmin, (_req: AuthenticatedRequest, res: Response) => {
+// Admin News (Synchronized with Supabase)
+app.get('/api/admin/news', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const supabaseNews = await getAllNewsFromSupabase();
+    if (supabaseNews !== null && supabaseNews.length > 0) {
+      res.json(supabaseNews);
+      return;
+    }
+  } catch (err) {
+    console.warn('Supabase admin news fetch error, fallback to local:', err);
+  }
   res.json(dbManager.getNews(false));
 });
 
-app.post('/api/admin/news', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.post('/api/admin/news', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const article = dbManager.saveNews(req.body);
     dbManager.logActivity('News Published/Drafted', req.admin?.email || 'admin', `Saved news article: ${article.title}`);
+    upsertNewsInSupabase(article).catch(e => console.warn('Supabase news sync warning:', e));
     res.status(201).json(article);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to save news article.' });
   }
 });
 
-app.put('/api/admin/news/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.put('/api/admin/news/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const article = dbManager.saveNews({ ...req.body, id: req.params.id });
     dbManager.logActivity('News Updated', req.admin?.email || 'admin', `Updated news article: ${article.title}`);
+    upsertNewsInSupabase(article).catch(e => console.warn('Supabase news sync warning:', e));
     res.json(article);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update news article.' });
   }
 });
 
-app.delete('/api/admin/news/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.delete('/api/admin/news/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const article = dbManager.getNewsById(req.params.id);
   const success = dbManager.deleteNews(req.params.id);
   if (success) {
     dbManager.logActivity('News Deleted', req.admin?.email || 'admin', `Deleted news article ID: ${req.params.id}`);
+    deleteNewsFromSupabase(req.params.id, article?.title).catch(e => console.warn('Supabase news delete warning:', e));
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'News article not found.' });
@@ -561,8 +615,9 @@ app.get('/api/admin/inquiries/:id', requireAdmin, (req: AuthenticatedRequest, re
   res.json(item);
 });
 
-app.patch('/api/admin/inquiries/:id/status', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.patch('/api/admin/inquiries/:id/status', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   const { status } = req.body;
+  const inq = dbManager.getInquiryById(req.params.id);
   const success = dbManager.updateInquiryStatus(req.params.id, status as InquiryStatus);
   if (success) {
     dbManager.logActivity(
@@ -570,6 +625,9 @@ app.patch('/api/admin/inquiries/:id/status', requireAdmin, (req: AuthenticatedRe
       req.admin?.email || 'admin',
       `Inquiry ${req.params.id} updated to status "${status}"`
     );
+    if (inq?.referenceNo) {
+      updateInquiryInSupabase(inq.referenceNo, { status }).catch(e => console.warn('Supabase inquiry update warning:', e));
+    }
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Inquiry not found.' });
@@ -591,10 +649,14 @@ app.post('/api/admin/inquiries/:id/notes', requireAdmin, (req: AuthenticatedRequ
   }
 });
 
-app.delete('/api/admin/inquiries/:id', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+app.delete('/api/admin/inquiries/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const inq = dbManager.getInquiryById(req.params.id);
   const success = dbManager.deleteInquiry(req.params.id);
   if (success) {
     dbManager.logActivity('Inquiry Deleted', req.admin?.email || 'admin', `Deleted inquiry ${req.params.id}`);
+    if (inq?.referenceNo) {
+      deleteInquiryFromSupabase(inq.referenceNo).catch(e => console.warn('Supabase inquiry delete warning:', e));
+    }
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Inquiry not found.' });

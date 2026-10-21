@@ -259,6 +259,25 @@ CREATE POLICY "Admins full access to inquiries" ON public.inquiries FOR ALL TO a
 DROP POLICY IF EXISTS "Admins full access to activity logs" ON public.activity_logs;
 CREATE POLICY "Admins full access to activity logs" ON public.activity_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+-- 4. Backend access via API keys (allows writes when connecting with anon or service_role key)
+DROP POLICY IF EXISTS "Backend anon can manage settings" ON public.settings;
+CREATE POLICY "Backend anon can manage settings" ON public.settings FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Backend anon can manage players" ON public.players;
+CREATE POLICY "Backend anon can manage players" ON public.players FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Backend anon can manage travel packages" ON public.travel_packages;
+CREATE POLICY "Backend anon can manage travel packages" ON public.travel_packages FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Backend anon can manage news" ON public.news;
+CREATE POLICY "Backend anon can manage news" ON public.news FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Backend anon can manage inquiries" ON public.inquiries;
+CREATE POLICY "Backend anon can manage inquiries" ON public.inquiries FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Backend anon can manage activity logs" ON public.activity_logs;
+CREATE POLICY "Backend anon can manage activity logs" ON public.activity_logs FOR ALL TO anon USING (true) WITH CHECK (true);
+
 -- ==============================================================================
 -- INITIAL SEED DATA (Only inserts if settings is empty)
 -- ==============================================================================

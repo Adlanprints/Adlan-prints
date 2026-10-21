@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { dbManager } from './db.js';
 
 export interface SupabaseTestResult {
   success: boolean;
@@ -16,8 +17,21 @@ export interface SupabaseTestResult {
 }
 
 export function getSupabaseClient(url?: string, key?: string): SupabaseClient | null {
-  const targetUrl = url || process.env.SUPABASE_URL;
-  const targetKey = key || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  let targetUrl = url || process.env.SUPABASE_URL;
+  let targetKey = key || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  // Fallback to settings stored in db.json if not present in process.env
+  if (!targetUrl || !targetKey) {
+    try {
+      const s = dbManager.getSettings()?.supabase;
+      if (s?.url && (s.serviceKey || s.anonKey)) {
+        targetUrl = targetUrl || s.url;
+        targetKey = targetKey || (s.serviceKey && s.serviceKey.trim() ? s.serviceKey : s.anonKey);
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (!targetUrl || !targetKey) {
     return null;
@@ -32,13 +46,10 @@ export function getSupabaseClient(url?: string, key?: string): SupabaseClient | 
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && (process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY));
+  return Boolean(getSupabaseClient());
 }
 
-// ==========================================
-// DATA MAPPING HELPERS
-// ==========================================
-
+// Data mappers
 export function mapSupabasePlayer(row: any): any {
   return {
     id: String(row.id),
@@ -87,6 +98,7 @@ export function mapSupabaseTravelPackage(row: any): any {
       : [],
     datesOrAvailability: row.dates_or_availability || undefined,
     terms: row.terms || '',
+    isFeatured: Boolean(row.is_featured),
     isPublished: Boolean(row.is_published),
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString()
@@ -97,6 +109,7 @@ export function mapSupabaseNews(row: any): any {
   return {
     id: String(row.id),
     title: row.title || '',
+    slug: row.slug || '',
     category: row.category || 'Sports Management',
     coverImageUrl: row.cover_image_url || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
     author: row.author || 'Chamonvin Editorial Desk',
@@ -118,32 +131,39 @@ export function mapSupabaseSettings(row: any, fallback: any): any {
     heroTagline: row.hero_tagline || fallback.heroTagline,
     heroButtons: row.hero_buttons || fallback.heroButtons,
     contact: row.contact || fallback.contact,
-    about: row.about || fallback.about
+    about: row.about || fallback.about,
+    supabase: fallback.supabase
   };
 }
 
-// ==========================================
-// SUPABASE QUERY API
-// ==========================================
-
+// Queries
 export async function getPublishedPlayersFromSupabase(): Promise<any[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
     const { data, error } = await client
       .from('players')
       .select('*')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('Supabase query error (players):', error.message);
-      return null;
-    }
+    if (error) return null;
     return (data || []).map(mapSupabasePlayer);
-  } catch (err) {
-    console.warn('Supabase exception (players):', err);
+  } catch {
+    return null;
+  }
+}
+
+export async function getAllPlayersFromSupabase(): Promise<any[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  try {
+    const { data, error } = await client
+      .from('players')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) return null;
+    return (data || []).map(mapSupabasePlayer);
+  } catch {
     return null;
   }
 }
@@ -151,14 +171,12 @@ export async function getPublishedPlayersFromSupabase(): Promise<any[] | null> {
 export async function getPlayerByIdFromSupabase(id: string): Promise<any | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
-    const { data, error } = await client
-      .from('players')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let query = client.from('players').select('*');
+    if (isUUID) query = query.eq('id', id);
+    else query = query.eq('full_name', id);
+    const { data, error } = await query.maybeSingle();
     if (error || !data) return null;
     return mapSupabasePlayer(data);
   } catch {
@@ -169,21 +187,30 @@ export async function getPlayerByIdFromSupabase(id: string): Promise<any | null>
 export async function getPublishedTravelPackagesFromSupabase(): Promise<any[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
     const { data, error } = await client
       .from('travel_packages')
       .select('*')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('Supabase query error (travel_packages):', error.message);
-      return null;
-    }
+    if (error) return null;
     return (data || []).map(mapSupabaseTravelPackage);
-  } catch (err) {
-    console.warn('Supabase exception (travel_packages):', err);
+  } catch {
+    return null;
+  }
+}
+
+export async function getAllTravelPackagesFromSupabase(): Promise<any[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  try {
+    const { data, error } = await client
+      .from('travel_packages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) return null;
+    return (data || []).map(mapSupabaseTravelPackage);
+  } catch {
     return null;
   }
 }
@@ -191,14 +218,12 @@ export async function getPublishedTravelPackagesFromSupabase(): Promise<any[] | 
 export async function getTravelPackageByIdFromSupabase(id: string): Promise<any | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
-    const { data, error } = await client
-      .from('travel_packages')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let query = client.from('travel_packages').select('*');
+    if (isUUID) query = query.eq('id', id);
+    else query = query.eq('title', id);
+    const { data, error } = await query.maybeSingle();
     if (error || !data) return null;
     return mapSupabaseTravelPackage(data);
   } catch {
@@ -209,36 +234,43 @@ export async function getTravelPackageByIdFromSupabase(id: string): Promise<any 
 export async function getPublishedNewsFromSupabase(): Promise<any[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
     const { data, error } = await client
       .from('news')
       .select('*')
       .eq('is_published', true)
       .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('Supabase query error (news):', error.message);
-      return null;
-    }
+    if (error) return null;
     return (data || []).map(mapSupabaseNews);
-  } catch (err) {
-    console.warn('Supabase exception (news):', err);
+  } catch {
     return null;
   }
 }
 
-export async function getNewsByIdFromSupabase(id: string): Promise<any | null> {
+export async function getAllNewsFromSupabase(): Promise<any[] | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
     const { data, error } = await client
       .from('news')
       .select('*')
-      .eq('id', id)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
+    if (error) return null;
+    return (data || []).map(mapSupabaseNews);
+  } catch {
+    return null;
+  }
+}
 
+export async function getNewsByIdFromSupabase(idOrSlug: string): Promise<any | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  try {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    let query = client.from('news').select('*');
+    if (isUUID) query = query.eq('id', idOrSlug);
+    else query = query.or(`slug.eq.${idOrSlug},title.eq.${idOrSlug}`);
+    const { data, error } = await query.maybeSingle();
     if (error || !data) return null;
     return mapSupabaseNews(data);
   } catch {
@@ -249,14 +281,12 @@ export async function getNewsByIdFromSupabase(id: string): Promise<any | null> {
 export async function getSettingsFromSupabase(fallback: any): Promise<any | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-
   try {
     const { data, error } = await client
       .from('settings')
       .select('*')
       .limit(1)
       .maybeSingle();
-
     if (error || !data) return null;
     return mapSupabaseSettings(data, fallback);
   } catch {
@@ -264,10 +294,228 @@ export async function getSettingsFromSupabase(fallback: any): Promise<any | null
   }
 }
 
+// REAL-TIME CRUD WRITE MUTATIONS (AUTO-SYNC)
+export async function upsertPlayerInSupabase(p: any): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Supabase client not configured' };
+
+  try {
+    const payload: any = {
+      full_name: p.fullName,
+      position: p.position,
+      date_of_birth: p.dateOfBirth || null,
+      nationality: p.nationality,
+      preferred_foot: p.preferredFoot || 'Right',
+      current_club: p.currentClub || null,
+      playing_level: p.playingLevel || 'Professional',
+      photo_url: p.photoUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80',
+      video_url: p.videoUrl || null,
+      short_bio: p.shortBio || '',
+      career_achievements: p.careerAchievements || [],
+      internal_scouting_notes: p.internalScoutingNotes || null,
+      is_featured: Boolean(p.isFeatured),
+      is_published: p.isPublished !== false
+    };
+
+    const isUUID = p.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id);
+    let existingId: string | null = null;
+
+    if (isUUID) {
+      const { data } = await client.from('players').select('id').eq('id', p.id).maybeSingle();
+      if (data?.id) existingId = data.id;
+    }
+
+    if (!existingId && p.fullName) {
+      const { data } = await client.from('players').select('id').eq('full_name', p.fullName.trim()).maybeSingle();
+      if (data?.id) existingId = data.id;
+    }
+
+    if (existingId) {
+      const { error } = await client.from('players').update(payload).eq('id', existingId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } else {
+      if (isUUID) payload.id = p.id;
+      const { error } = await client.from('players').insert(payload);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    }
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deletePlayerFromSupabase(id: string, fullName?: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUUID) {
+      const { error } = await client.from('players').delete().eq('id', id);
+      if (!error) return true;
+    }
+    if (fullName) {
+      const { error } = await client.from('players').delete().eq('full_name', fullName.trim());
+      if (!error) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export async function upsertTravelPackageInSupabase(t: any): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Supabase client not configured' };
+  try {
+    const payload: any = {
+      title: t.title,
+      destination: t.destination,
+      cover_image_url: t.coverImageUrl,
+      description: t.description,
+      duration: t.duration,
+      price: t.price || 'Inquire',
+      inclusions: t.inclusions || [],
+      is_featured: Boolean(t.isFeatured),
+      is_published: t.isPublished !== false
+    };
+    const isUUID = t.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id);
+    let existingId: string | null = null;
+    if (isUUID) {
+      const { data } = await client.from('travel_packages').select('id').eq('id', t.id).maybeSingle();
+      if (data?.id) existingId = data.id;
+    }
+    if (!existingId && t.title) {
+      const { data } = await client.from('travel_packages').select('id').eq('title', t.title.trim()).maybeSingle();
+      if (data?.id) existingId = data.id;
+    }
+    if (existingId) {
+      const { error } = await client.from('travel_packages').update(payload).eq('id', existingId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } else {
+      if (isUUID) payload.id = t.id;
+      const { error } = await client.from('travel_packages').insert(payload);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    }
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteTravelPackageFromSupabase(id: string, title?: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUUID) {
+      const { error } = await client.from('travel_packages').delete().eq('id', id);
+      if (!error) return true;
+    }
+    if (title) {
+      const { error } = await client.from('travel_packages').delete().eq('title', title.trim());
+      if (!error) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export async function upsertNewsInSupabase(n: any): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Supabase client not configured' };
+  try {
+    const slug = n.slug || (n.title || 'news')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const payload: any = {
+      title: n.title,
+      slug,
+      category: n.category || 'Company News',
+      cover_image_url: n.coverImageUrl,
+      author: n.author || 'Chamonvin Editorial Desk',
+      content: n.content,
+      summary: n.summary,
+      is_published: n.isPublished !== false
+    };
+    const isUUID = n.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(n.id);
+    let existingId: string | null = null;
+    if (isUUID) {
+      const { data } = await client.from('news').select('id').eq('id', n.id).maybeSingle();
+      if (data?.id) existingId = data.id;
+    }
+    if (!existingId && n.title) {
+      const { data } = await client.from('news').select('id').eq('title', n.title.trim()).maybeSingle();
+      if (data?.id) existingId = data.id;
+    }
+    if (existingId) {
+      const { error } = await client.from('news').update(payload).eq('id', existingId);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } else {
+      if (isUUID) payload.id = n.id;
+      const { error } = await client.from('news').insert(payload);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    }
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteNewsFromSupabase(id: string, title?: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUUID) {
+      const { error } = await client.from('news').delete().eq('id', id);
+      if (!error) return true;
+    }
+    if (title) {
+      const { error } = await client.from('news').delete().eq('title', title.trim());
+      if (!error) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export async function upsertSettingsInSupabase(settings: any): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Supabase client not configured' };
+  try {
+    const payload = {
+      company_name: settings.companyName,
+      logo_url: settings.logoUrl,
+      logo_type: settings.logoType,
+      hero_slider: settings.heroSlider,
+      hero_tagline: settings.heroTagline,
+      hero_buttons: settings.heroButtons,
+      contact: settings.contact,
+      about: settings.about
+    };
+    const { data: existing } = await client.from('settings').select('id').limit(1).maybeSingle();
+    if (existing?.id) {
+      const { error } = await client.from('settings').update(payload).eq('id', existing.id);
+      if (error) return { success: false, error: error.message };
+    } else {
+      const { error } = await client.from('settings').insert(payload);
+      if (error) return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function insertInquiryToSupabase(inq: any): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
-
   try {
     const { error } = await client.from('inquiries').insert({
       reference_no: inq.referenceNo,
@@ -286,38 +534,44 @@ export async function insertInquiryToSupabase(inq: any): Promise<boolean> {
   }
 }
 
-// ==========================================
-// TEST CONNECTION & SYNC
-// ==========================================
+export async function updateInquiryInSupabase(referenceNo: string, updates: any): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const { error } = await client.from('inquiries').update(updates).eq('reference_no', referenceNo);
+    return !error;
+  } catch {
+    return false;
+  }
+}
 
+export async function deleteInquiryFromSupabase(referenceNoOrId: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referenceNoOrId);
+    if (isUUID) {
+      const { error } = await client.from('inquiries').delete().eq('id', referenceNoOrId);
+      if (!error) return true;
+    }
+    const { error } = await client.from('inquiries').delete().eq('reference_no', referenceNoOrId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+// Test and Sync helpers
 export async function testSupabaseConnection(url: string, key: string): Promise<SupabaseTestResult> {
   const cleanUrl = (url || '').trim();
   const cleanKey = (key || '').trim();
-
-  if (!cleanUrl) {
-    return {
-      success: false,
-      message: 'Supabase Project URL is missing. Please provide your Supabase URL (e.g. https://xxxx.supabase.co).',
-      error: 'Missing URL'
-    };
-  }
-
-  if (!cleanKey) {
-    return {
-      success: false,
-      message: 'Supabase API Key is missing. Please provide your anon public key or service role key.',
-      error: 'Missing API Key'
-    };
-  }
+  if (!cleanUrl) return { success: false, message: 'Supabase Project URL is missing.', error: 'Missing URL' };
+  if (!cleanKey) return { success: false, message: 'Supabase API Key is missing.', error: 'Missing API Key' };
 
   try {
     const client = createClient(cleanUrl, cleanKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
-      }
+      auth: { persistSession: false, autoRefreshToken: false }
     });
-
     const [playersRes, settingsRes, travelRes, newsRes, inqRes] = await Promise.all([
       client.from('players').select('id', { count: 'exact', head: true }),
       client.from('settings').select('id', { count: 'exact', head: true }),
@@ -328,19 +582,13 @@ export async function testSupabaseConnection(url: string, key: string): Promise<
 
     if (playersRes.error && settingsRes.error) {
       const err = playersRes.error.message || settingsRes.error.message;
-      return {
-        success: false,
-        url: cleanUrl,
-        message: `Connection reached Supabase, but encountered error: ${err}`,
-        error: err,
-        details: 'Ensure that you have executed supabase_schema.sql in the Supabase SQL Editor and that your anon/service_role API key is correct.'
-      };
+      return { success: false, url: cleanUrl, message: `Encountered error: ${err}`, error: err };
     }
 
     return {
       success: true,
       url: cleanUrl,
-      message: 'Successfully connected to Supabase! Database tables are reachable and verified.',
+      message: 'Successfully connected to Supabase! Database tables verified.',
       tableCounts: {
         players: playersRes.count ?? (playersRes.error ? null : 0),
         settings: settingsRes.count ?? (settingsRes.error ? null : 0),
@@ -350,79 +598,33 @@ export async function testSupabaseConnection(url: string, key: string): Promise<
       }
     };
   } catch (err: any) {
-    return {
-      success: false,
-      url: cleanUrl,
-      message: `Failed to connect to Supabase: ${err.message || 'Network error'}`,
-      error: err.message || 'Unknown network error',
-      details: 'Check if your Supabase Project URL is spelled correctly and the Supabase project is active.'
-    };
+    return { success: false, url: cleanUrl, message: `Failed to connect: ${err.message}`, error: err.message };
   }
 }
 
 export async function syncLocalDataToSupabase(
   url: string,
   key: string,
-  data: {
-    settings: any;
-    players: any[];
-    travelPackages: any[];
-    news: any[];
-    inquiries: any[];
-  }
+  data: { settings: any; players: any[]; travelPackages: any[]; news: any[]; inquiries: any[] }
 ): Promise<{ success: boolean; message: string; synced: Record<string, number>; errors?: string[] }> {
-  const client = createClient(url.trim(), key.trim(), {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-
-  const synced: Record<string, number> = {
-    settings: 0,
-    players: 0,
-    travelPackages: 0,
-    newsArticles: 0,
-    inquiries: 0
-  };
+  const synced: Record<string, number> = { settings: 0, players: 0, travelPackages: 0, newsArticles: 0, inquiries: 0 };
   const errors: string[] = [];
 
-  // 1. Sync Settings
+  // 1. Settings
   try {
-    const { error } = await client.from('settings').upsert({
-      company_name: data.settings.companyName,
-      logo_url: data.settings.logoUrl,
-      logo_type: data.settings.logoType,
-      hero_slider: data.settings.heroSlider,
-      hero_tagline: data.settings.heroTagline,
-      hero_buttons: data.settings.heroButtons,
-      contact: data.settings.contact,
-      about: data.settings.about
-    });
-    if (error) errors.push(`Settings: ${error.message}`);
+    const res = await upsertSettingsInSupabase(data.settings);
+    if (!res.success && res.error) errors.push(`Settings: ${res.error}`);
     else synced.settings = 1;
   } catch (e: any) {
     errors.push(`Settings: ${e.message}`);
   }
 
-  // 2. Sync Players
-  if (data.players && data.players.length > 0) {
+  // 2. Players
+  if (data.players?.length) {
     for (const p of data.players) {
       try {
-        const { error } = await client.from('players').upsert({
-          full_name: p.fullName,
-          position: p.position,
-          date_of_birth: p.dateOfBirth || null,
-          nationality: p.nationality,
-          preferred_foot: p.preferredFoot || 'Right',
-          current_club: p.currentClub || null,
-          playing_level: p.playingLevel || 'Professional',
-          photo_url: p.photoUrl,
-          video_url: p.videoUrl || null,
-          short_bio: p.shortBio,
-          career_achievements: p.careerAchievements || [],
-          internal_scouting_notes: p.internalScoutingNotes || null,
-          is_featured: Boolean(p.isFeatured),
-          is_published: p.isPublished !== false
-        });
-        if (error) errors.push(`Player ${p.fullName}: ${error.message}`);
+        const res = await upsertPlayerInSupabase(p);
+        if (!res.success && res.error) errors.push(`Player ${p.fullName}: ${res.error}`);
         else synced.players += 1;
       } catch (e: any) {
         errors.push(`Player ${p.fullName}: ${e.message}`);
@@ -430,21 +632,12 @@ export async function syncLocalDataToSupabase(
     }
   }
 
-  // 3. Sync Travel Packages
-  if (data.travelPackages && data.travelPackages.length > 0) {
+  // 3. Travel Packages
+  if (data.travelPackages?.length) {
     for (const t of data.travelPackages) {
       try {
-        const { error } = await client.from('travel_packages').upsert({
-          title: t.title,
-          destination: t.destination,
-          cover_image_url: t.coverImageUrl,
-          description: t.description,
-          duration: t.duration,
-          price: t.price || 'Inquire',
-          inclusions: t.inclusions || [],
-          is_published: t.isPublished !== false
-        });
-        if (error) errors.push(`Travel ${t.title}: ${error.message}`);
+        const res = await upsertTravelPackageInSupabase(t);
+        if (!res.success && res.error) errors.push(`Travel ${t.title}: ${res.error}`);
         else synced.travelPackages += 1;
       } catch (e: any) {
         errors.push(`Travel ${t.title}: ${e.message}`);
@@ -452,25 +645,12 @@ export async function syncLocalDataToSupabase(
     }
   }
 
-  // 4. Sync News
-  if (data.news && data.news.length > 0) {
+  // 4. News
+  if (data.news?.length) {
     for (const n of data.news) {
       try {
-        const slug = (n.title || 'news')
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '') + '-' + Date.now().toString(36);
-        const { error } = await client.from('news').upsert({
-          title: n.title,
-          slug,
-          category: n.category || 'Company News',
-          cover_image_url: n.coverImageUrl,
-          author: n.author || 'Chamonvin Editorial Desk',
-          content: n.content,
-          summary: n.summary,
-          is_published: n.isPublished !== false
-        });
-        if (error) errors.push(`News ${n.title}: ${error.message}`);
+        const res = await upsertNewsInSupabase(n);
+        if (!res.success && res.error) errors.push(`News ${n.title}: ${res.error}`);
         else synced.newsArticles += 1;
       } catch (e: any) {
         errors.push(`News ${n.title}: ${e.message}`);
@@ -480,9 +660,7 @@ export async function syncLocalDataToSupabase(
 
   return {
     success: errors.length === 0,
-    message: errors.length === 0
-      ? 'All local data successfully synchronized to Supabase!'
-      : `Sync completed with ${errors.length} warnings (if RLS blocked write, add SUPABASE_SERVICE_ROLE_KEY).`,
+    message: errors.length === 0 ? 'All local data successfully synchronized to Supabase!' : `Sync finished with ${errors.length} warnings.`,
     synced,
     errors: errors.length > 0 ? errors : undefined
   };
