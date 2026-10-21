@@ -348,18 +348,22 @@ export async function upsertPlayerInSupabase(p: any): Promise<{ success: boolean
 export async function deletePlayerFromSupabase(id: string, fullName?: string): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
+  let deleted = false;
   try {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     if (isUUID) {
       const { error } = await client.from('players').delete().eq('id', id);
-      if (!error) return true;
+      if (!error) deleted = true;
+      else console.warn('Supabase delete player by id error:', error.message);
     }
-    if (fullName) {
+    if (fullName && fullName.trim()) {
       const { error } = await client.from('players').delete().eq('full_name', fullName.trim());
-      if (!error) return true;
+      if (!error) deleted = true;
+      else console.warn('Supabase delete player by full_name error:', error.message);
     }
-    return false;
-  } catch {
+    return deleted;
+  } catch (err: any) {
+    console.warn('Supabase deletePlayerFromSupabase error:', err.message);
     return false;
   }
 }
@@ -407,18 +411,22 @@ export async function upsertTravelPackageInSupabase(t: any): Promise<{ success: 
 export async function deleteTravelPackageFromSupabase(id: string, title?: string): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
+  let deleted = false;
   try {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     if (isUUID) {
       const { error } = await client.from('travel_packages').delete().eq('id', id);
-      if (!error) return true;
+      if (!error) deleted = true;
+      else console.warn('Supabase delete travel package by id error:', error.message);
     }
-    if (title) {
+    if (title && title.trim()) {
       const { error } = await client.from('travel_packages').delete().eq('title', title.trim());
-      if (!error) return true;
+      if (!error) deleted = true;
+      else console.warn('Supabase delete travel package by title error:', error.message);
     }
-    return false;
-  } catch {
+    return deleted;
+  } catch (err: any) {
+    console.warn('Supabase deleteTravelPackageFromSupabase error:', err.message);
     return false;
   }
 }
@@ -469,18 +477,22 @@ export async function upsertNewsInSupabase(n: any): Promise<{ success: boolean; 
 export async function deleteNewsFromSupabase(id: string, title?: string): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
+  let deleted = false;
   try {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     if (isUUID) {
       const { error } = await client.from('news').delete().eq('id', id);
-      if (!error) return true;
+      if (!error) deleted = true;
+      else console.warn('Supabase delete news by id error:', error.message);
     }
-    if (title) {
+    if (title && title.trim()) {
       const { error } = await client.from('news').delete().eq('title', title.trim());
-      if (!error) return true;
+      if (!error) deleted = true;
+      else console.warn('Supabase delete news by title error:', error.message);
     }
-    return false;
-  } catch {
+    return deleted;
+  } catch (err: any) {
+    console.warn('Supabase deleteNewsFromSupabase error:', err.message);
     return false;
   }
 }
@@ -548,15 +560,18 @@ export async function updateInquiryInSupabase(referenceNo: string, updates: any)
 export async function deleteInquiryFromSupabase(referenceNoOrId: string): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
+  let deleted = false;
   try {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referenceNoOrId);
     if (isUUID) {
       const { error } = await client.from('inquiries').delete().eq('id', referenceNoOrId);
-      if (!error) return true;
+      if (!error) deleted = true;
     }
-    const { error } = await client.from('inquiries').delete().eq('reference_no', referenceNoOrId);
-    return !error;
-  } catch {
+    const { error: refError } = await client.from('inquiries').delete().eq('reference_no', referenceNoOrId);
+    if (!refError) deleted = true;
+    return deleted;
+  } catch (err: any) {
+    console.warn('deleteInquiryFromSupabase error:', err.message);
     return false;
   }
 }

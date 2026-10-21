@@ -175,11 +175,14 @@ export const AdminPlayers: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
+    const targetId = deleteTarget.id;
+    const targetName = deleteTarget.name;
     setDeleting(true);
     try {
-      const res = await authFetch(`/api/admin/players/${deleteTarget.id}`, { method: 'DELETE' });
+      const res = await authFetch(`/api/admin/players/${targetId}`, { method: 'DELETE' });
       if (res.ok) {
-        showToast('success', `Player "${deleteTarget.name}" deleted.`);
+        setPlayers((prev) => prev.filter((p) => p.id !== targetId));
+        showToast('success', `Player "${targetName}" deleted.`);
         setDeleteTarget(null);
         fetchPlayers();
       } else {
@@ -195,9 +198,9 @@ export const AdminPlayers: React.FC = () => {
 
   const filteredPlayers = players.filter(
     (p) =>
-      p.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      p.position.toLowerCase().includes(search.toLowerCase()) ||
-      p.nationality.toLowerCase().includes(search.toLowerCase())
+      (p?.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p?.position || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p?.nationality || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const previewEmbedUrl = editingPlayer?.videoUrl ? getYouTubeEmbedUrl(editingPlayer.videoUrl) : null;

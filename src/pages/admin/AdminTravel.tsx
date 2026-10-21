@@ -161,11 +161,14 @@ export const AdminTravel: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    const targetTitle = deleteTarget.title;
     setDeleting(true);
     try {
-      const res = await authFetch(`/api/admin/travel-packages/${deleteTarget.id}`, { method: 'DELETE' });
+      const res = await authFetch(`/api/admin/travel-packages/${targetId}`, { method: 'DELETE' });
       if (res.ok) {
-        showToast('success', `Travel package "${deleteTarget.title}" deleted.`);
+        setPackages((prev) => prev.filter((p) => p.id !== targetId));
+        showToast('success', `Travel package "${targetTitle}" deleted.`);
         setDeleteTarget(null);
         fetchPackages();
       } else {
@@ -181,8 +184,8 @@ export const AdminTravel: React.FC = () => {
 
   const filtered = packages.filter(
     (p) =>
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.destination.toLowerCase().includes(search.toLowerCase())
+      (p?.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p?.destination || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (

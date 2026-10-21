@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { dbManager, InquiryCategory, InquiryStatus } from './server/db.js';
 import { generateToken, requireAdmin, AuthenticatedRequest } from './server/auth.js';
 import {
+  isSupabaseConfigured,
   testSupabaseConnection,
   syncLocalDataToSupabase,
   getPublishedPlayersFromSupabase,
@@ -107,10 +108,12 @@ app.get('/api/public/config', async (_req: Request, res: Response) => {
 // Get published players
 app.get('/api/public/players', async (_req: Request, res: Response) => {
   try {
-    const supabasePlayers = await getPublishedPlayersFromSupabase();
-    if (supabasePlayers !== null && supabasePlayers.length > 0) {
-      res.json(supabasePlayers);
-      return;
+    if (isSupabaseConfigured()) {
+      const supabasePlayers = await getPublishedPlayersFromSupabase();
+      if (supabasePlayers !== null) {
+        res.json(supabasePlayers);
+        return;
+      }
     }
   } catch (err) {
     console.warn('Supabase players query failed, using local:', err);
@@ -141,10 +144,12 @@ app.get('/api/public/players/:id', async (req: Request, res: Response) => {
 // Get published travel packages
 app.get('/api/public/travel-packages', async (_req: Request, res: Response) => {
   try {
-    const supabasePackages = await getPublishedTravelPackagesFromSupabase();
-    if (supabasePackages !== null && supabasePackages.length > 0) {
-      res.json(supabasePackages);
-      return;
+    if (isSupabaseConfigured()) {
+      const supabasePackages = await getPublishedTravelPackagesFromSupabase();
+      if (supabasePackages !== null) {
+        res.json(supabasePackages);
+        return;
+      }
     }
   } catch (err) {
     console.warn('Supabase travel packages query failed, using local:', err);
@@ -175,10 +180,12 @@ app.get('/api/public/travel-packages/:id', async (req: Request, res: Response) =
 // Get published news
 app.get('/api/public/news', async (_req: Request, res: Response) => {
   try {
-    const supabaseNews = await getPublishedNewsFromSupabase();
-    if (supabaseNews !== null && supabaseNews.length > 0) {
-      res.json(supabaseNews);
-      return;
+    if (isSupabaseConfigured()) {
+      const supabaseNews = await getPublishedNewsFromSupabase();
+      if (supabaseNews !== null) {
+        res.json(supabaseNews);
+        return;
+      }
     }
   } catch (err) {
     console.warn('Supabase news query failed, using local:', err);
@@ -356,9 +363,34 @@ app.post('/api/admin/change-password', requireAdmin, (req: AuthenticatedRequest,
   }
 });
 
-// Admin stats overview
-app.get('/api/admin/stats', requireAdmin, (_req: AuthenticatedRequest, res: Response) => {
+// Admin stats overview (Live counts from Supabase when configured)
+app.get('/api/admin/stats', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
   const stats = dbManager.getDashboardStats();
+
+  if (isSupabaseConfigured()) {
+    try {
+      const [supabasePlayers, supabasePackages, supabaseNews] = await Promise.all([
+        getAllPlayersFromSupabase(),
+        getAllTravelPackagesFromSupabase(),
+        getAllNewsFromSupabase()
+      ]);
+
+      if (supabasePlayers !== null) {
+        stats.totalPlayers = supabasePlayers.length;
+        stats.publishedPlayers = supabasePlayers.filter((p) => p.isPublished).length;
+        stats.draftPlayers = stats.totalPlayers - stats.publishedPlayers;
+      }
+      if (supabasePackages !== null) {
+        stats.activePackages = supabasePackages.filter((p) => p.isPublished).length;
+      }
+      if (supabaseNews !== null) {
+        stats.publishedNews = supabaseNews.filter((n) => n.isPublished).length;
+      }
+    } catch (err) {
+      console.warn('Failed to calculate live Supabase stats:', err);
+    }
+  }
+
   res.json(stats);
 });
 
@@ -452,10 +484,12 @@ app.post('/api/admin/supabase/sync', requireAdmin, async (req: AuthenticatedRequ
 // Admin players management (Synchronized with Supabase)
 app.get('/api/admin/players', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const supabasePlayers = await getAllPlayersFromSupabase();
-    if (supabasePlayers !== null && supabasePlayers.length > 0) {
-      res.json(supabasePlayers);
-      return;
+    if (isSupabaseConfigured()) {
+      const supabasePlayers = await getAllPlayersFromSupabase();
+      if (supabasePlayers !== null) {
+        res.json(supabasePlayers);
+        return;
+      }
     }
   } catch (err) {
     console.warn('Supabase admin players fetch error, fallback to local:', err);
@@ -488,24 +522,39 @@ app.put('/api/admin/players/:id', requireAdmin, async (req: AuthenticatedRequest
 });
 
 app.delete('/api/admin/players/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
-  const player = dbManager.getPlayerById(req.params.id);
-  const success = dbManager.deletePlayer(req.params.id);
-  if (success) {
-    dbManager.logActivity('Player Deleted', req.admin?.email || 'admin', `Deleted player with ID: ${req.params.id}`);
-    deletePlayerFromSupabase(req.params.id, player?.fullName).catch(e => console.warn('Supabase player delete warning:', e));
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'Player not found.' });
+  try {
+    const id = req.params.id;
+    let player = dbManager.getPlayerById(id);
+    if (!player) {
+      player = await getPlayerByIdFromSupabase(id);
+    }
+
+    // 1. Delete from Supabase
+    await deletePlayerFromSupabase(id, player?.fullName);
+
+    // 2. Delete from local database (by ID and by full name fallback)
+    dbManager.deletePlayer(id);
+    if (player?.fullName) {
+      dbManager.deletePlayer(player.fullName);
+    }
+
+    dbManager.logActivity('Player Deleted', req.admin?.email || 'admin', `Deleted player with ID: ${id}`);
+    res.json({ success: true, message: 'Player deleted successfully.' });
+  } catch (err: any) {
+    console.error('Player deletion error:', err);
+    res.status(500).json({ error: 'Failed to delete player.' });
   }
 });
 
 // Admin Travel Packages (Synchronized with Supabase)
 app.get('/api/admin/travel-packages', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const supabasePackages = await getAllTravelPackagesFromSupabase();
-    if (supabasePackages !== null && supabasePackages.length > 0) {
-      res.json(supabasePackages);
-      return;
+    if (isSupabaseConfigured()) {
+      const supabasePackages = await getAllTravelPackagesFromSupabase();
+      if (supabasePackages !== null) {
+        res.json(supabasePackages);
+        return;
+      }
     }
   } catch (err) {
     console.warn('Supabase admin travel packages fetch error, fallback to local:', err);
@@ -536,24 +585,37 @@ app.put('/api/admin/travel-packages/:id', requireAdmin, async (req: Authenticate
 });
 
 app.delete('/api/admin/travel-packages/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
-  const pkg = dbManager.getTravelPackageById(req.params.id);
-  const success = dbManager.deleteTravelPackage(req.params.id);
-  if (success) {
-    dbManager.logActivity('Travel Package Deleted', req.admin?.email || 'admin', `Deleted travel package ID: ${req.params.id}`);
-    deleteTravelPackageFromSupabase(req.params.id, pkg?.title).catch(e => console.warn('Supabase travel package delete warning:', e));
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'Travel package not found.' });
+  try {
+    const id = req.params.id;
+    let pkg = dbManager.getTravelPackageById(id);
+    if (!pkg) {
+      pkg = await getTravelPackageByIdFromSupabase(id);
+    }
+
+    await deleteTravelPackageFromSupabase(id, pkg?.title);
+
+    dbManager.deleteTravelPackage(id);
+    if (pkg?.title) {
+      dbManager.deleteTravelPackage(pkg.title);
+    }
+
+    dbManager.logActivity('Travel Package Deleted', req.admin?.email || 'admin', `Deleted travel package ID: ${id}`);
+    res.json({ success: true, message: 'Travel package deleted successfully.' });
+  } catch (err: any) {
+    console.error('Travel package deletion error:', err);
+    res.status(500).json({ error: 'Failed to delete travel package.' });
   }
 });
 
 // Admin News (Synchronized with Supabase)
 app.get('/api/admin/news', requireAdmin, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const supabaseNews = await getAllNewsFromSupabase();
-    if (supabaseNews !== null && supabaseNews.length > 0) {
-      res.json(supabaseNews);
-      return;
+    if (isSupabaseConfigured()) {
+      const supabaseNews = await getAllNewsFromSupabase();
+      if (supabaseNews !== null) {
+        res.json(supabaseNews);
+        return;
+      }
     }
   } catch (err) {
     console.warn('Supabase admin news fetch error, fallback to local:', err);
@@ -584,14 +646,25 @@ app.put('/api/admin/news/:id', requireAdmin, async (req: AuthenticatedRequest, r
 });
 
 app.delete('/api/admin/news/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
-  const article = dbManager.getNewsById(req.params.id);
-  const success = dbManager.deleteNews(req.params.id);
-  if (success) {
-    dbManager.logActivity('News Deleted', req.admin?.email || 'admin', `Deleted news article ID: ${req.params.id}`);
-    deleteNewsFromSupabase(req.params.id, article?.title).catch(e => console.warn('Supabase news delete warning:', e));
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'News article not found.' });
+  try {
+    const id = req.params.id;
+    let article = dbManager.getNewsById(id);
+    if (!article) {
+      article = await getNewsByIdFromSupabase(id);
+    }
+
+    await deleteNewsFromSupabase(id, article?.title);
+
+    dbManager.deleteNews(id);
+    if (article?.title) {
+      dbManager.deleteNews(article.title);
+    }
+
+    dbManager.logActivity('News Deleted', req.admin?.email || 'admin', `Deleted news article ID: ${id}`);
+    res.json({ success: true, message: 'News article deleted successfully.' });
+  } catch (err: any) {
+    console.error('News deletion error:', err);
+    res.status(500).json({ error: 'Failed to delete news article.' });
   }
 });
 
@@ -650,16 +723,18 @@ app.post('/api/admin/inquiries/:id/notes', requireAdmin, (req: AuthenticatedRequ
 });
 
 app.delete('/api/admin/inquiries/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
-  const inq = dbManager.getInquiryById(req.params.id);
-  const success = dbManager.deleteInquiry(req.params.id);
-  if (success) {
-    dbManager.logActivity('Inquiry Deleted', req.admin?.email || 'admin', `Deleted inquiry ${req.params.id}`);
-    if (inq?.referenceNo) {
-      deleteInquiryFromSupabase(inq.referenceNo).catch(e => console.warn('Supabase inquiry delete warning:', e));
-    }
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'Inquiry not found.' });
+  try {
+    const id = req.params.id;
+    const inq = dbManager.getInquiryById(id);
+
+    await deleteInquiryFromSupabase(inq?.referenceNo || id);
+    dbManager.deleteInquiry(id);
+
+    dbManager.logActivity('Inquiry Deleted', req.admin?.email || 'admin', `Deleted inquiry ${id}`);
+    res.json({ success: true, message: 'Inquiry deleted successfully.' });
+  } catch (err: any) {
+    console.error('Inquiry deletion error:', err);
+    res.status(500).json({ error: 'Failed to delete inquiry.' });
   }
 });
 

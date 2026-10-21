@@ -141,11 +141,14 @@ export const AdminNews: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    const targetTitle = deleteTarget.title;
     setDeleting(true);
     try {
-      const res = await authFetch(`/api/admin/news/${deleteTarget.id}`, { method: 'DELETE' });
+      const res = await authFetch(`/api/admin/news/${targetId}`, { method: 'DELETE' });
       if (res.ok) {
-        showToast('success', `Article "${deleteTarget.title}" deleted.`);
+        setNews((prev) => prev.filter((n) => n.id !== targetId));
+        showToast('success', `Article "${targetTitle}" deleted.`);
         setDeleteTarget(null);
         fetchNews();
       } else {
@@ -161,8 +164,8 @@ export const AdminNews: React.FC = () => {
 
   const filtered = news.filter(
     (n) =>
-      n.title.toLowerCase().includes(search.toLowerCase()) ||
-      n.category.toLowerCase().includes(search.toLowerCase())
+      (n?.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (n?.category || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (

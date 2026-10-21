@@ -114,14 +114,17 @@ export const AdminInquiries: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
+    const targetId = deleteTarget.id;
+    const targetRef = deleteTarget.ref;
     setDeleting(true);
     try {
-      const res = await authFetch(`/api/admin/inquiries/${deleteTarget.id}`, {
+      const res = await authFetch(`/api/admin/inquiries/${targetId}`, {
         method: 'DELETE'
       });
       if (res.ok) {
-        showToast('success', `Inquiry ${deleteTarget.ref} deleted successfully.`);
-        if (selectedInquiry?.id === deleteTarget.id) setSelectedInquiry(null);
+        setInquiries((prev) => prev.filter((i) => i.id !== targetId));
+        showToast('success', `Inquiry ${targetRef} deleted successfully.`);
+        if (selectedInquiry?.id === targetId) setSelectedInquiry(null);
         setDeleteTarget(null);
         fetchInquiries();
       } else {

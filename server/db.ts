@@ -409,7 +409,7 @@ class DatabaseManager {
 
     const newPlayer: PlayerProfile = {
       ...playerData,
-      id: `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: playerData.id || `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       createdAt: now,
       updatedAt: now
     };
@@ -421,7 +421,7 @@ class DatabaseManager {
   public deletePlayer(id: string): boolean {
     this.sync();
     const initialLen = this.db.players.length;
-    this.db.players = this.db.players.filter((p) => p.id !== id);
+    this.db.players = this.db.players.filter((p) => p.id !== id && p.fullName.trim().toLowerCase() !== id.trim().toLowerCase());
     if (this.db.players.length !== initialLen) {
       this.save();
       return true;
@@ -466,7 +466,7 @@ class DatabaseManager {
 
     const newPkg: TravelPackage = {
       ...pkgData,
-      id: `pkg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: pkgData.id || `pkg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       createdAt: now,
       updatedAt: now
     };
@@ -478,7 +478,7 @@ class DatabaseManager {
   public deleteTravelPackage(id: string): boolean {
     this.sync();
     const len = this.db.travelPackages.length;
-    this.db.travelPackages = this.db.travelPackages.filter((p) => p.id !== id);
+    this.db.travelPackages = this.db.travelPackages.filter((p) => p.id !== id && p.title.trim().toLowerCase() !== id.trim().toLowerCase());
     if (this.db.travelPackages.length !== len) {
       this.save();
       return true;
@@ -523,7 +523,7 @@ class DatabaseManager {
 
     const newArticle: NewsArticle = {
       ...newsData,
-      id: `news-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: newsData.id || `news-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       createdAt: now,
       updatedAt: now
     };
@@ -535,7 +535,7 @@ class DatabaseManager {
   public deleteNews(id: string): boolean {
     this.sync();
     const len = this.db.news.length;
-    this.db.news = this.db.news.filter((n) => n.id !== id);
+    this.db.news = this.db.news.filter((n) => n.id !== id && n.title.trim().toLowerCase() !== id.trim().toLowerCase());
     if (this.db.news.length !== len) {
       this.save();
       return true;
@@ -631,8 +631,9 @@ class DatabaseManager {
   }
 
   public deleteInquiry(id: string): boolean {
+    this.sync();
     const len = this.db.inquiries.length;
-    this.db.inquiries = this.db.inquiries.filter((i) => i.id !== id);
+    this.db.inquiries = this.db.inquiries.filter((i) => i.id !== id && i.referenceNo !== id);
     if (this.db.inquiries.length !== len) {
       this.save();
       return true;
